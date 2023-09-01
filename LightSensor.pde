@@ -4,10 +4,19 @@ Created by Sebastian Dowell in 2023 for Mr. Chan's APCS Virtual Pet assignment.
 Inspiration taken from https://www.alibabacloud.com/blog/construct-a-simple-3d-rendering-engine-with-java_599599
 */
 
+// Necessary Imports
+import processing.serial.*;
+import cc.arduino.*;
+import java.util.concurrent.TimeUnit;
+import java.io.*;
+import java.lang.Thread;
+
 // Processing code resides below
 
 // Initial global declarations
 Matrix3 transform;
+Arduino arduino = new Arduino(this, Arduino.list()[0], 57600);
+
 float[] angles = new float[2];
 boolean jumpState;
 double x, v, a, t; // Position, velocity, acceleration, time
@@ -47,6 +56,7 @@ public void draw() {
     background(0);
     translate(width / 2, height / 2);
     
+    y = arduino.analogRead(5);
     y = (float)Math.log(2*y)*25;
     if (y < 75) {
         y = 75;
@@ -57,7 +67,7 @@ public void draw() {
     if (a.e() == true) {
         System.out.println("Registered Click: #" + i);
         i++;
-        jump();
+        jumpState = true; jump();
     }
     
     float angle = radians(angles[0]); // Convert angle to radians
@@ -106,6 +116,7 @@ void jump() {
             x = 0.5 * a * t * t + v * t;
         }
         x = 0;
+        jumpState = false;
     }
     
 }
@@ -213,14 +224,20 @@ void mouseDragged() {
 class a {
     protected boolean x;
     boolean e() {
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         x = false;
         if (y != 75 && o == true) {
             x = true;
         }
         return x;
+        
     }
     public a() {
-        if (y < 80) {
+        if (y < 90) {
             o = true;
         } else {
             o = false;
