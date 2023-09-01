@@ -4,22 +4,18 @@ Created by Sebastian Dowell in 2023 for Mr. Chan's APCS Virtual Pet assignment.
 Inspiration taken from https://www.alibabacloud.com/blog/construct-a-simple-3d-rendering-engine-with-java_599599
 */
 
-// Imports
-import processing.serial.*;
-import cc.arduino.*;
-import org.firmata.*;
-
 // Processing code resides below
 
 // Initial global declarations
 Matrix3 transform;
-Arduino arduino = new Arduino(this, Arduino.list()[0], 57600);
-int y = arduino.analogRead(5);
 float[] angles = new float[2];
+boolean jumpState;
+double x, v, a, t; // Position, velocity, acceleration, time
+float y;
+int i = 1;
+boolean o;
 
-int r;
-int g;
-int b;
+int r, g, b; // Red, green, blue
 
 ArrayList<Quadrilateral> quad1 = new Objects().initializeQuadrilateral(1, 1);
 ArrayList<Quadrilateral> quad2 = new Objects().initializeQuadrilateral(2, 0.75);
@@ -37,7 +33,7 @@ ArrayList<Quadrilateral> quad13 = new Objects().initializeQuadrilateral(13, 1.5)
 ArrayList<Triangle> tri1 = new Objects().initializeTriangle(1);
 ArrayList<Sphere> s1 = new Objects().initializeSpheres(1);
 
-void setup() {
+public void setup() {
     size(600, 450);
     strokeWeight(2);
     
@@ -47,9 +43,22 @@ void setup() {
     updateTransform();
 }
 
-void draw() {
+public void draw() {
     background(0);
     translate(width / 2, height / 2);
+    
+    y = (float)Math.log(2*y)*25;
+    if (y < 75) {
+        y = 75;
+    } else  if (y > 125) {
+        y = 125;
+    }
+    a a = new a();
+    if (a.e() == true) {
+        System.out.println("Registered Click: #" + i);
+        i++;
+        jump();
+    }
     
     float angle = radians(angles[0]); // Convert angle to radians
     // Calculate RGB values based on the angle
@@ -82,6 +91,23 @@ void draw() {
     renderQuadrilateral(quad7, false, 255, 255, 255, 1);
     // Render box
     renderQuadrilateral(quad2, false, r, g, b, 1);
+}
+
+void jump() {
+    double tRef = System.currentTimeMillis();
+    double v0 = 10;
+    double a = -9.81;
+    if (jumpState == false) {
+        return;
+    } else {
+        while (x >= 0) {
+            double t = (System.currentTimeMillis() - tRef) / 1000;
+            double v = a * t + v0;
+            x = 0.5 * a * t * t + v * t;
+        }
+        x = 0;
+    }
+    
 }
 
 void renderQuadrilateral(ArrayList<Quadrilateral> quads, boolean cb, int rc, int bc, int gc, float w) {
@@ -170,15 +196,7 @@ void updateTransform() {
         0, -sin(pitch), cos(pitch)
     });
 
-    float roll = radians(map(y, 0, 1023, -45, 45));
-    Matrix3 rollTransform = new Matrix3(new double[]{
-        cos(roll), -sin(roll), 0,
-        sin(roll), cos(roll), 0,
-        0, 0, 1
-    });
-
-    
-    transform = headingTransform.multiply(pitchTransform).multiply(rollTransform);
+    transform = headingTransform.multiply(pitchTransform);
 }
 
 void mouseDragged() {
@@ -190,6 +208,24 @@ void mouseDragged() {
     redraw();
 
     updateTransform();
+}
+
+class a {
+    protected boolean x;
+    boolean e() {
+        x = false;
+        if (y != 75 && o == true) {
+            x = true;
+        }
+        return x;
+    }
+    public a() {
+        if (y < 80) {
+            o = true;
+        } else {
+            o = false;
+        }
+    }
 }
 
 class Path {
@@ -321,14 +357,14 @@ class Objects {
         ArrayList<Quadrilateral> q = new ArrayList<Quadrilateral>();
         // Define arrays for the 3D constructions
         if (n==1) {
-            Vertex r1 = new Vertex((int)(100*p), (int)(100*p), (int)(100*p));
-            Vertex r2 = new Vertex((int)(-100*p), (int)(100*p), (int)(100*p));
-            Vertex r3 = new Vertex((int)(-100*p), (int)(-100*p), (int)(100*p));
-            Vertex r4 = new Vertex((int)(100*p), (int)(-100*p), (int)(100*p));
-            Vertex r5 = new Vertex((int)(100*p), (int)(100*p), (int)(-100*p));
-            Vertex r6 = new Vertex((int)(-100*p), (int)(100*p), (int)(-100*p));
-            Vertex r7 = new Vertex((int)(-100*p), (int)(-100*p), (int)(-100*p));
-            Vertex r8 = new Vertex((int)(100*p), (int)(-100*p), (int)(-100*p));
+            Vertex r1 = new Vertex((int)(100*p), (int)(100*p) + x, (int)(100*p));
+            Vertex r2 = new Vertex((int)(-100*p), (int)(100*p) + x, (int)(100*p));
+            Vertex r3 = new Vertex((int)(-100*p), (int)(-100*p) + x, (int)(100*p));
+            Vertex r4 = new Vertex((int)(100*p), (int)(-100*p) + x, (int)(100*p));
+            Vertex r5 = new Vertex((int)(100*p), (int)(100*p) + x, (int)(-100*p));
+            Vertex r6 = new Vertex((int)(-100*p), (int)(100*p) + x, (int)(-100*p));
+            Vertex r7 = new Vertex((int)(-100*p), (int)(-100*p) + x, (int)(-100*p));
+            Vertex r8 = new Vertex((int)(100*p), (int)(-100*p) + x, (int)(-100*p));
 
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 0, 0, 255, 0, 0)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 0, 0, 255, 0, 0)));
@@ -337,14 +373,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 0, 0, 255, 0, 0)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 0, 0, 255, 0, 0)));
         } else if (n==2) {
-            Vertex r1 = new Vertex((int)(200*p), (int)(200*p), (int)(200*p));
-            Vertex r2 = new Vertex((int)(-200*p), (int)(200*p), (int)(200*p));
-            Vertex r3 = new Vertex((int)(-200*p), (int)(-200*p), (int)(200*p));
-            Vertex r4 = new Vertex((int)(200*p), (int)(-200*p), (int)(200*p));
-            Vertex r5 = new Vertex((int)(200*p), (int)(200*p), (int)(-200*p));
-            Vertex r6 = new Vertex((int)(-200*p), (int)(200*p), (int)(-200*p));
-            Vertex r7 = new Vertex((int)(-200*p), (int)(-200*p), (int)(-200*p));
-            Vertex r8 = new Vertex((int)(200*p), (int)(-200*p), (int)(-200*p));
+            Vertex r1 = new Vertex((int)(200*p), (int)(200*p) + x, (int)(200*p));
+            Vertex r2 = new Vertex((int)(-200*p), (int)(200*p) + x, (int)(200*p));
+            Vertex r3 = new Vertex((int)(-200*p), (int)(-200*p) + x, (int)(200*p));
+            Vertex r4 = new Vertex((int)(200*p), (int)(-200*p) + x, (int)(200*p));
+            Vertex r5 = new Vertex((int)(200*p), (int)(200*p) + x, (int)(-200*p));
+            Vertex r6 = new Vertex((int)(-200*p), (int)(200*p) + x, (int)(-200*p));
+            Vertex r7 = new Vertex((int)(-200*p), (int)(-200*p) + x, (int)(-200*p));
+            Vertex r8 = new Vertex((int)(200*p), (int)(-200*p + x), (int)(-200*p));
 
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 0, 0, 255, 0, 0)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 0, 0, 255, 0, 0)));
@@ -353,14 +389,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 0, 0, 255, 0, 0)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 0, 0, 255, 0, 0)));
         } else if (n==3) {
-            Vertex r1 = new Vertex((int)(30*p), (int)(60*p), (int)(25*p));
-            Vertex r2 = new Vertex((int)(-30*p), (int)(60*p), (int)(25*p));
-            Vertex r3 = new Vertex((int)(-30*p), (int)(-60*p), (int)(25*p));
-            Vertex r4 = new Vertex((int)(30*p), (int)(-60*p), (int)(25*p));
-            Vertex r5 = new Vertex((int)(30*p), (int)(60*p), (int)(-25*p));
-            Vertex r6 = new Vertex((int)(-30*p), (int)(60*p), (int)(-25*p));
-            Vertex r7 = new Vertex((int)(-30*p), (int)(-60*p), (int)(-25*p));
-            Vertex r8 = new Vertex((int)(30*p), (int)(-60*p), (int)(-25*p));
+            Vertex r1 = new Vertex((int)(30*p), (int)(60*p) + x, (int)(25*p));
+            Vertex r2 = new Vertex((int)(-30*p), (int)(60*p) + x, (int)(25*p));
+            Vertex r3 = new Vertex((int)(-30*p), (int)(-60*p) + x, (int)(25*p));
+            Vertex r4 = new Vertex((int)(30*p), (int)(-60*p) + x, (int)(25*p));
+            Vertex r5 = new Vertex((int)(30*p), (int)(60*p) + x, (int)(-25*p));
+            Vertex r6 = new Vertex((int)(-30*p), (int)(60*p) + x, (int)(-25*p));
+            Vertex r7 = new Vertex((int)(-30*p), (int)(-60*p) + x, (int)(-25*p));
+            Vertex r8 = new Vertex((int)(30*p), (int)(-60*p) + x, (int)(-25*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -369,14 +405,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==4) {
-            Vertex r1 = new Vertex((int)(10*p), (int)(-75*p), (int)(15*p));
-            Vertex r2 = new Vertex((int)(-10*p), (int)(-75*p), (int)(15*p));
-            Vertex r3 = new Vertex((int)(-10*p), (int)(-60*p), (int)(15*p));
-            Vertex r4 = new Vertex((int)(10*p), (int)(-60*p), (int)(15*p));
-            Vertex r5 = new Vertex((int)(10*p), (int)(-75*p), (int)(-15*p));
-            Vertex r6 = new Vertex((int)(-10*p), (int)(-75*p), (int)(-15*p));
-            Vertex r7 = new Vertex((int)(-10*p), (int)(-60*p), (int)(-15*p));
-            Vertex r8 = new Vertex((int)(10*p), (int)(-60*p), (int)(-15*p));
+            Vertex r1 = new Vertex((int)(10*p), (int)(-75*p) + x, (int)(15*p));
+            Vertex r2 = new Vertex((int)(-10*p), (int)(-75*p) + x, (int)(15*p));
+            Vertex r3 = new Vertex((int)(-10*p), (int)(-60*p) + x, (int)(15*p));
+            Vertex r4 = new Vertex((int)(10*p), (int)(-60*p) + x, (int)(15*p));
+            Vertex r5 = new Vertex((int)(10*p), (int)(-75*p) + x, (int)(-15*p));
+            Vertex r6 = new Vertex((int)(-10*p), (int)(-75*p) + x, (int)(-15*p));
+            Vertex r7 = new Vertex((int)(-10*p), (int)(-60*p) + x, (int)(-15*p));
+            Vertex r8 = new Vertex((int)(10*p), (int)(-60*p) + x, (int)(-15*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -385,14 +421,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==5) {
-            Vertex r1 = new Vertex((int)(10*p), (int)(-50*p), (int)(25*p));
-            Vertex r2 = new Vertex((int)(-10*p), (int)(-50*p), (int)(25*p));
-            Vertex r3 = new Vertex((int)(-10*p), (int)(-30*p), (int)(25*p));
-            Vertex r4 = new Vertex((int)(10*p), (int)(-30*p), (int)(25*p));
-            Vertex r5 = new Vertex((int)(10*p), (int)(-50*p), (int)(60*p));
-            Vertex r6 = new Vertex((int)(-10*p), (int)(-50*p), (int)(60*p));
-            Vertex r7 = new Vertex((int)(-10*p), (int)(-30*p), (int)(60*p));
-            Vertex r8 = new Vertex((int)(10*p), (int)(-30*p), (int)(60*p));
+            Vertex r1 = new Vertex((int)(10*p), (int)(-50*p) + x, (int)(25*p));
+            Vertex r2 = new Vertex((int)(-10*p), (int)(-50*p) + x, (int)(25*p));
+            Vertex r3 = new Vertex((int)(-10*p), (int)(-30*p) + x, (int)(25*p));
+            Vertex r4 = new Vertex((int)(10*p), (int)(-30*p) + x, (int)(25*p));
+            Vertex r5 = new Vertex((int)(10*p), (int)(-50*p) + x, (int)(60*p));
+            Vertex r6 = new Vertex((int)(-10*p), (int)(-50*p) + x, (int)(60*p));
+            Vertex r7 = new Vertex((int)(-10*p), (int)(-30*p) + x, (int)(60*p));
+            Vertex r8 = new Vertex((int)(10*p), (int)(-30*p) + x, (int)(60*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -401,14 +437,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==6) {
-            Vertex r1 = new Vertex((int)(10*p), (int)(-30*p), (int)(25*p));
-            Vertex r2 = new Vertex((int)(-10*p), (int)(-30*p), (int)(25*p));
-            Vertex r3 = new Vertex((int)(-10*p), (int)(-10*p), (int)(25*p));
-            Vertex r4 = new Vertex((int)(10*p), (int)(-10*p), (int)(25*p));
-            Vertex r5 = new Vertex((int)(10*p), (int)(-30*p), (int)(45*p));
-            Vertex r6 = new Vertex((int)(-10*p), (int)(-30*p), (int)(45*p));
-            Vertex r7 = new Vertex((int)(-10*p), (int)(-10*p), (int)(45*p));
-            Vertex r8 = new Vertex((int)(10*p), (int)(-10*p), (int)(45*p));
+            Vertex r1 = new Vertex((int)(10*p), (int)(-30*p) + x, (int)(25*p));
+            Vertex r2 = new Vertex((int)(-10*p), (int)(-30*p) + x, (int)(25*p));
+            Vertex r3 = new Vertex((int)(-10*p), (int)(-10*p) + x, (int)(25*p));
+            Vertex r4 = new Vertex((int)(10*p), (int)(-10*p) + x, (int)(25*p));
+            Vertex r5 = new Vertex((int)(10*p), (int)(-30*p) + x, (int)(45*p));
+            Vertex r6 = new Vertex((int)(-10*p), (int)(-30*p) + x, (int)(45*p));
+            Vertex r7 = new Vertex((int)(-10*p), (int)(-10*p) + x, (int)(45*p));
+            Vertex r8 = new Vertex((int)(10*p), (int)(-10*p) + x, (int)(45*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -417,14 +453,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==7) {
-            Vertex r1 = new Vertex((int)(30*p), (int)(60*p), (int)(25*p));
-            Vertex r2 = new Vertex((int)(-30*p), (int)(60*p), (int)(25*p));
-            Vertex r3 = new Vertex((int)(-30*p), (int)(20*p), (int)(25*p));
-            Vertex r4 = new Vertex((int)(30*p), (int)(20*p), (int)(25*p));
-            Vertex r5 = new Vertex((int)(30*p), (int)(60*p), (int)(-60*p));
-            Vertex r6 = new Vertex((int)(-30*p), (int)(60*p), (int)(-60*p));
-            Vertex r7 = new Vertex((int)(-30*p), (int)(20*p), (int)(-60*p));
-            Vertex r8 = new Vertex((int)(30*p), (int)(20*p), (int)(-60*p));
+            Vertex r1 = new Vertex((int)(30*p), (int)(60*p) + x, (int)(25*p));
+            Vertex r2 = new Vertex((int)(-30*p), (int)(60*p) + x, (int)(25*p));
+            Vertex r3 = new Vertex((int)(-30*p), (int)(20*p) + x, (int)(25*p));
+            Vertex r4 = new Vertex((int)(30*p), (int)(20*p) + x, (int)(25*p));
+            Vertex r5 = new Vertex((int)(30*p), (int)(60*p) + x, (int)(-60*p));
+            Vertex r6 = new Vertex((int)(-30*p), (int)(60*p) + x, (int)(-60*p));
+            Vertex r7 = new Vertex((int)(-30*p), (int)(20*p) + x, (int)(-60*p));
+            Vertex r8 = new Vertex((int)(30*p), (int)(20*p) + x, (int)(-60*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -433,14 +469,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==8) {
-            Vertex r1 = new Vertex((int)(25*p), (int)(60*p), (int)(-15*p));
-            Vertex r2 = new Vertex((int)(15*p), (int)(60*p), (int)(-15*p));
-            Vertex r3 = new Vertex((int)(15*p), (int)(80*p), (int)(-15*p));
-            Vertex r4 = new Vertex((int)(25*p), (int)(80*p), (int)(-15*p));
-            Vertex r5 = new Vertex((int)(25*p), (int)(60*p), (int)(-25*p));
-            Vertex r6 = new Vertex((int)(15*p), (int)(60*p), (int)(-25*p));
-            Vertex r7 = new Vertex((int)(15*p), (int)(80*p), (int)(-25*p));
-            Vertex r8 = new Vertex((int)(25*p), (int)(80*p), (int)(-25*p));
+            Vertex r1 = new Vertex((int)(25*p), (int)(60*p) + x, (int)(-15*p));
+            Vertex r2 = new Vertex((int)(15*p), (int)(60*p) + x, (int)(-15*p));
+            Vertex r3 = new Vertex((int)(15*p), (int)(80*p) + x, (int)(-15*p));
+            Vertex r4 = new Vertex((int)(25*p), (int)(80*p) + x, (int)(-15*p));
+            Vertex r5 = new Vertex((int)(25*p), (int)(60*p) + x, (int)(-25*p));
+            Vertex r6 = new Vertex((int)(15*p), (int)(60*p) + x, (int)(-25*p));
+            Vertex r7 = new Vertex((int)(15*p), (int)(80*p) + x, (int)(-25*p));
+            Vertex r8 = new Vertex((int)(25*p), (int)(80*p) + x, (int)(-25*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -449,14 +485,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==9) {
-            Vertex r1 = new Vertex((int)(-25*p), (int)(60*p), (int)(-15*p));
-            Vertex r2 = new Vertex((int)(-15*p), (int)(60*p), (int)(-15*p));
-            Vertex r3 = new Vertex((int)(-15*p), (int)(80*p), (int)(-15*p));
-            Vertex r4 = new Vertex((int)(-25*p), (int)(80*p), (int)(-15*p));
-            Vertex r5 = new Vertex((int)(-25*p), (int)(60*p), (int)(-25*p));
-            Vertex r6 = new Vertex((int)(-15*p), (int)(60*p), (int)(-25*p));
-            Vertex r7 = new Vertex((int)(-15*p), (int)(80*p), (int)(-25*p));
-            Vertex r8 = new Vertex((int)(-25*p), (int)(80*p), (int)(-25*p));
+            Vertex r1 = new Vertex((int)(-25*p), (int)(60*p) + x, (int)(-15*p));
+            Vertex r2 = new Vertex((int)(-15*p), (int)(60*p) + x, (int)(-15*p));
+            Vertex r3 = new Vertex((int)(-15*p), (int)(80*p) + x, (int)(-15*p));
+            Vertex r4 = new Vertex((int)(-25*p), (int)(80*p) + x, (int)(-15*p));
+            Vertex r5 = new Vertex((int)(-25*p), (int)(60*p) + x, (int)(-25*p));
+            Vertex r6 = new Vertex((int)(-15*p), (int)(60*p) + x, (int)(-25*p));
+            Vertex r7 = new Vertex((int)(-15*p), (int)(80*p) + x, (int)(-25*p));
+            Vertex r8 = new Vertex((int)(-25*p), (int)(80*p) + x, (int)(-25*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -465,14 +501,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==10) {
-            Vertex r1 = new Vertex((int)(-30*p), (int)(80*p), 0);
-            Vertex r2 = new Vertex((int)(-10*p), (int)(80*p), 0);
-            Vertex r3 = new Vertex((int)(-10*p), (int)(90*p), 0);
-            Vertex r4 = new Vertex((int)(-30*p), (int)(90*p), 0);
-            Vertex r5 = new Vertex((int)(-30*p), (int)(80*p), (int)(-30*p));
-            Vertex r6 = new Vertex((int)(-10*p), (int)(80*p), (int)(-30*p));
-            Vertex r7 = new Vertex((int)(-10*p), (int)(90*p), (int)(-30*p));
-            Vertex r8 = new Vertex((int)(-30*p), (int)(90*p), (int)(-30*p));
+            Vertex r1 = new Vertex((int)(-30*p), (int)(80*p) + x, 0);
+            Vertex r2 = new Vertex((int)(-10*p), (int)(80*p) + x, 0);
+            Vertex r3 = new Vertex((int)(-10*p), (int)(90*p) + x, 0);
+            Vertex r4 = new Vertex((int)(-30*p), (int)(90*p) + x, 0);
+            Vertex r5 = new Vertex((int)(-30*p), (int)(80*p) + x, (int)(-30*p));
+            Vertex r6 = new Vertex((int)(-10*p), (int)(80*p) + x, (int)(-30*p));
+            Vertex r7 = new Vertex((int)(-10*p), (int)(90*p) + x, (int)(-30*p));
+            Vertex r8 = new Vertex((int)(-30*p), (int)(90*p) + x, (int)(-30*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -481,14 +517,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==11) {
-            Vertex r1 = new Vertex((int)(30*p), (int)(80*p), 0);
-            Vertex r2 = new Vertex((int)(10*p), (int)(80*p), 0);
-            Vertex r3 = new Vertex((int)(10*p), (int)(90*p), 0);
-            Vertex r4 = new Vertex((int)(30*p), (int)(90*p), 0);
-            Vertex r5 = new Vertex((int)(30*p), (int)(80*p), (int)(-30*p));
-            Vertex r6 = new Vertex((int)(10*p), (int)(80*p), (int)(-30*p));
-            Vertex r7 = new Vertex((int)(10*p), (int)(90*p), (int)(-30*p));
-            Vertex r8 = new Vertex((int)(30*p), (int)(90*p), (int)(-30*p));
+            Vertex r1 = new Vertex((int)(30*p), (int)(80*p) + x, 0);
+            Vertex r2 = new Vertex((int)(10*p), (int)(80*p) + x, 0);
+            Vertex r3 = new Vertex((int)(10*p), (int)(90*p) + x, 0);
+            Vertex r4 = new Vertex((int)(30*p), (int)(90*p) + x, 0);
+            Vertex r5 = new Vertex((int)(30*p), (int)(80*p) + x, (int)(-30*p));
+            Vertex r6 = new Vertex((int)(10*p), (int)(80*p) + x, (int)(-30*p));
+            Vertex r7 = new Vertex((int)(10*p), (int)(90*p) + x, (int)(-30*p));
+            Vertex r8 = new Vertex((int)(30*p), (int)(90*p) + x, (int)(-30*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -497,14 +533,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==12) {
-            Vertex r1 = new Vertex((int)(30*p), (int)(-50*p), (int)(15*p));
-            Vertex r2 = new Vertex((int)(20*p), (int)(-50*p), (int)(15*p));
-            Vertex r3 = new Vertex((int)(20*p), (int)(-40*p), (int)(15*p));
-            Vertex r4 = new Vertex((int)(30*p), (int)(-40*p), (int)(15*p));
-            Vertex r5 = new Vertex((int)(30*p), (int)(-50*p), (int)(5*p));
-            Vertex r6 = new Vertex((int)(20*p), (int)(-50*p), (int)(5*p));
-            Vertex r7 = new Vertex((int)(20*p), (int)(-40*p), (int)(5*p));
-            Vertex r8 = new Vertex((int)(30*p), (int)(-40*p), (int)(5*p));
+            Vertex r1 = new Vertex((int)(30*p), (int)(-50*p) + x, (int)(15*p));
+            Vertex r2 = new Vertex((int)(20*p), (int)(-50*p) + x, (int)(15*p));
+            Vertex r3 = new Vertex((int)(20*p), (int)(-40*p) + x, (int)(15*p));
+            Vertex r4 = new Vertex((int)(30*p), (int)(-40*p) + x, (int)(15*p));
+            Vertex r5 = new Vertex((int)(30*p), (int)(-50*p) + x, (int)(5*p));
+            Vertex r6 = new Vertex((int)(20*p), (int)(-50*p) + x, (int)(5*p));
+            Vertex r7 = new Vertex((int)(20*p), (int)(-40*p) + x, (int)(5*p));
+            Vertex r8 = new Vertex((int)(30*p), (int)(-40*p) + x, (int)(5*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
@@ -513,14 +549,14 @@ class Objects {
             q.add(new Quadrilateral(r3, r4, r8, r7, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r1, r4, r8, r5, new Gradient(255, 255, 255, 255, 255, 255)));
         } else if (n==13) {
-            Vertex r1 = new Vertex((int)(-30*p), (int)(-50*p), (int)(15*p));
-            Vertex r2 = new Vertex((int)(-20*p), (int)(-50*p), (int)(15*p));
-            Vertex r3 = new Vertex((int)(-20*p), (int)(-40*p), (int)(15*p));
-            Vertex r4 = new Vertex((int)(-30*p), (int)(-40*p), (int)(15*p));
-            Vertex r5 = new Vertex((int)(-30*p), (int)(-50*p), (int)(5*p));
-            Vertex r6 = new Vertex((int)(-20*p), (int)(-50*p), (int)(5*p));
-            Vertex r7 = new Vertex((int)(-20*p), (int)(-40*p), (int)(5*p));
-            Vertex r8 = new Vertex((int)(-30*p), (int)(-40*p), (int)(5*p));
+            Vertex r1 = new Vertex((int)(-30*p), (int)(-50*p) + x, (int)(15*p));
+            Vertex r2 = new Vertex((int)(-20*p), (int)(-50*p) + x, (int)(15*p));
+            Vertex r3 = new Vertex((int)(-20*p), (int)(-40*p) + x, (int)(15*p));
+            Vertex r4 = new Vertex((int)(-30*p), (int)(-40*p) + x, (int)(15*p));
+            Vertex r5 = new Vertex((int)(-30*p), (int)(-50*p) + x, (int)(5*p));
+            Vertex r6 = new Vertex((int)(-20*p), (int)(-50*p) + x, (int)(5*p));
+            Vertex r7 = new Vertex((int)(-20*p), (int)(-40*p) + x, (int)(5*p));
+            Vertex r8 = new Vertex((int)(-30*p), (int)(-40*p) + x, (int)(5*p));
             
             q.add(new Quadrilateral(r1, r2, r3, r4, new Gradient(255, 255, 255, 255, 255, 255)));
             q.add(new Quadrilateral(r5, r6, r7, r8, new Gradient(255, 255, 255, 255, 255, 255)));
