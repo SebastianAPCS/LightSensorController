@@ -7,13 +7,14 @@ Inspiration taken from https://www.alibabacloud.com/blog/construct-a-simple-3d-r
 // Necessary Imports
 import cc.arduino.*;
 import org.firmata.*;
+import processing.serial.Serial;
 
 // Processing code resides below
 
 // Initial global declarations
 Matrix3 transform;
 float[] angles = new float[2];
-Arduino arduino = new Arduino(this, Arduino.list()[1], 57600);
+Arduino arduino = new Arduino(this, Arduino.list()[2], 57600);
 
 int r;
 int g;
@@ -23,11 +24,13 @@ boolean jumpState;
 double x;
 double tRef;
 double v0 = 10;
-double a = -20;
+double ac = -20;
 
 float y;
 boolean o;
 int i = 1;
+long lastClickTime = 0;
+long debounceDelay = 1000;
 
 ArrayList<Quadrilateral> quad1 = new Objects().initializeQuadrilateral(1, 1);
 ArrayList<Quadrilateral> quad2 = new Objects().initializeQuadrilateral(2, 0.75);
@@ -86,18 +89,6 @@ void draw() {
     g = (int) (127 + 127 * cos(angle + TWO_PI / 3));
     b = (int) (127 + 127 * cos(angle + 2 * TWO_PI / 3));
     
-    if (jumpState) {
-      double t = (millis() - tRef) / 1000.0;
-      x = a * t * t + v0 * t;
-      System.out.println("T: " + t);
-      System.out.println("X: " + x);
-      
-      if (x < 0) {
-        x = 0;
-        jumpState = false;
-      }
-    }
-    
     y = arduino.analogRead(5);
     y = (float)Math.log(2*y)*25;
     if (y < 75) {
@@ -109,6 +100,22 @@ void draw() {
     if (a.e() == true) {
         System.out.println("Registered Click: #" + i);
         i++;
+        if (!jumpState) {
+          jumpState = true;
+          tRef = millis();
+         }
+    }
+    
+    if (jumpState) {
+      double t = (millis() - tRef) / 1000.0;
+      x = ac * t * t + v0 * t;
+      System.out.println("T: " + t);
+      System.out.println("X: " + x);
+      
+      if (x < 0) {
+        x = 0;
+        jumpState = false;
+      }
     }
     //renderQuadrilateral(quad1, false, r, g, b, 1);
     //renderTriangle(tri1, false, r, g, b);
@@ -136,27 +143,27 @@ void draw() {
     renderQuadrilateral(quad2, false, r, g, b, 1);
 }
 
+/*
 void mousePressed() {
   if (!jumpState) {
     jumpState = true;
     tRef = millis();
   }
 }
+*/
 
 class a {
     protected boolean x;
     boolean e() {
-        try {
-            Thread.sleep(250);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        x = false;
-        if (y != 75 && o == true) {
-            x = true;
+        long currentTime = millis();
+        if (currentTime - lastClickTime > debounceDelay) {
+          x = false;
+          if (y != 75 && o == true) {
+              lastClickTime = currentTime;
+              x = true;
+          }
         }
         return x;
-        
     }
     public a() {
         if (y < 90) {
